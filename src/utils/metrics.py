@@ -1,3 +1,5 @@
+import os
+import pickle
 import numpy as np
 import pandas as pd
 import torch
@@ -15,7 +17,6 @@ def read_label(dataset):
 
 def read_hr_label(feed_dict, index):
     """Read manually corrected UBFC labels."""
-    # For UBFC only
     if index[:7] == 'subject':
         index = index[7:]
 
@@ -54,6 +55,8 @@ def calculate_metrics(predictions, labels, config):
     gt_hr_peak_all = list()
     SNR_all = list()
     MACC_all = list()
+
+    audit_data = []
 
     print("Calculating metrics!")
 
@@ -113,6 +116,15 @@ def calculate_metrics(predictions, labels, config):
                 SNR_all.append(SNR)
                 MACC_all.append(macc)
 
+                audit_data.append({
+                    'clip_id': index,
+                    'hr_pred': pred_hr_peak,
+                    'hr_gt': gt_hr_peak,
+                    'snr': SNR,
+                    'bvp_pred': pred_window,
+                    'bvp_gt': label_window
+                })
+
             elif config.INFERENCE.EVALUATION_METHOD == "FFT":
 
                 gt_hr_fft, pred_hr_fft, SNR, macc = calculate_metric_per_video(
@@ -128,10 +140,18 @@ def calculate_metrics(predictions, labels, config):
                 SNR_all.append(SNR)
                 MACC_all.append(macc)
 
+                audit_data.append({
+                    'clip_id': index,
+                    'hr_pred': pred_hr_fft,
+                    'hr_gt': gt_hr_fft,
+                    'snr': SNR,
+                    'bvp_pred': pred_window,
+                    'bvp_gt': label_window
+                })
+
             else:
                 raise ValueError("Inference evaluation method name wrong!")
 
-    # Filename ID to be used in any results files
     if config.TOOLBOX_MODE == 'train_and_test':
         filename_id = config.TRAIN.MODEL_FILE_NAME
 
@@ -148,9 +168,18 @@ def calculate_metrics(predictions, labels, config):
             'Metrics.py evaluation only supports train_and_test and only_test!'
         )
 
-    # ---------------------------------------------------------
-    # FFT EVALUATION
-    # ---------------------------------------------------------
+    audit_dir = "data/frozen_predictions"
+    os.makedirs(audit_dir, exist_ok=True)
+
+    audit_path = os.path.join(
+        audit_dir,
+        f"{filename_id}_audit.pkl"
+    )
+
+    with open(audit_path, 'wb') as f:
+        pickle.dump(audit_data, f)
+
+    print(f"--- AUDIT DATA SAVED TO {audit_path} ---")
 
     if config.INFERENCE.EVALUATION_METHOD == "FFT":
 
@@ -290,10 +319,6 @@ def calculate_metrics(predictions, labels, config):
 
             else:
                 raise ValueError("Wrong Test Metric Type")
-
-    # ---------------------------------------------------------
-    # PEAK DETECTION EVALUATION
-    # ---------------------------------------------------------
 
     elif config.INFERENCE.EVALUATION_METHOD == "peak detection":
 
