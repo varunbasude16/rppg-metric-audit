@@ -152,15 +152,24 @@ def calculate_metrics(predictions, labels, config):
             else:
                 raise ValueError("Inference evaluation method name wrong!")
 
+    # ---------------------------------------------------------
+    # Generate unique filename for frozen audit predictions
+    # ---------------------------------------------------------
+
     if config.TOOLBOX_MODE == 'train_and_test':
         filename_id = config.TRAIN.MODEL_FILE_NAME
 
     elif config.TOOLBOX_MODE == 'only_test':
-        model_file_root = (
-            config.INFERENCE.MODEL_PATH
-            .split("/")[-1]
-            .split(".pth")[0]
-        )
+
+        if config.INFERENCE.MODEL_PATH:
+            model_file_root = (
+                config.INFERENCE.MODEL_PATH
+                .split("/")[-1]
+                .split(".pth")[0]
+            )
+        else:
+            model_file_root = config.MODEL.NAME
+
         filename_id = model_file_root + "_" + config.TEST.DATA.DATASET
 
     else:
@@ -180,6 +189,10 @@ def calculate_metrics(predictions, labels, config):
         pickle.dump(audit_data, f)
 
     print(f"--- AUDIT DATA SAVED TO {audit_path} ---")
+
+    # ---------------------------------------------------------
+    # FFT Evaluation
+    # ---------------------------------------------------------
 
     if config.INFERENCE.EVALUATION_METHOD == "FFT":
 
@@ -320,6 +333,10 @@ def calculate_metrics(predictions, labels, config):
             else:
                 raise ValueError("Wrong Test Metric Type")
 
+    # ---------------------------------------------------------
+    # Peak Detection Evaluation
+    # ---------------------------------------------------------
+
     elif config.INFERENCE.EVALUATION_METHOD == "peak detection":
 
         gt_hr_peak_all = np.array(gt_hr_peak_all)
@@ -394,7 +411,7 @@ def calculate_metrics(predictions, labels, config):
                 )
 
                 print(
-                    "PEAK MAPE (Peak Label): {0} +/- {1}".format(
+                    "Peak MAPE (Peak Label): {0} +/- {1}".format(
                         MAPE_PEAK,
                         standard_error
                     )
@@ -415,7 +432,7 @@ def calculate_metrics(predictions, labels, config):
                 )
 
                 print(
-                    "PEAK Pearson (Peak Label): {0} +/- {1}".format(
+                    "Peak Pearson (Peak Label): {0} +/- {1}".format(
                         correlation_coefficient,
                         standard_error
                     )
@@ -431,7 +448,7 @@ def calculate_metrics(predictions, labels, config):
                 )
 
                 print(
-                    "PEAK SNR (PEAK Label): {0} +/- {1} (dB)".format(
+                    "Peak SNR (Peak Label): {0} +/- {1} (dB)".format(
                         SNR_PEAK,
                         standard_error
                     )
@@ -447,7 +464,7 @@ def calculate_metrics(predictions, labels, config):
                 )
 
                 print(
-                    "PEAK MACC (Peak Label): {0} +/- {1}".format(
+                    "Peak MACC (Peak Label): {0} +/- {1}".format(
                         MACC_avg,
                         standard_error
                     )
