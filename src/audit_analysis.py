@@ -10,6 +10,8 @@ METHOD_FILES = {
     "CHROM": "CHROM_audit.pkl",
     "GREEN": "GREEN_audit.pkl",
     "POS": "POS_audit.pkl",
+    "DeepPhys": "SCAMPS_DeepPhys_UBFC-rPPG_audit.pkl",
+    "TS-CAN": "SCAMPS_TSCAN_UBFC-rPPG_audit.pkl",
 }
 
 
